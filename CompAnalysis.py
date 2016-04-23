@@ -43,7 +43,7 @@ def exercise1(soma_clamp_params, apic_clamp_params):
     cl_soma = LFPy.StimIntElectrode(cell, **soma_clamp_params)
     cl_apic = LFPy.StimIntElectrode(cell, **apic_clamp_params)
 
-    cell.simulate(rec_imem=True, rec_vmem=True, rec_istim=True)
+    cell.simulate(rec_vmem=True, rec_istim=True)
 
     ### PLOTTING THE RESULTS
     cell_plot_idxs = [soma_clamp_params['idx'], apic_clamp_params['idx']]    
@@ -66,6 +66,81 @@ def exercise1(soma_clamp_params, apic_clamp_params):
     plt.subplot(224, title='Input currents', xlabel='Time [ms]', ylabel='nA', ylim=stim_lim)
     plt.plot(cell.tvec, cl_soma.i, c=cell_plot_colors[soma_clamp_params['idx']], lw=2)
     plt.plot(cell.tvec, cl_apic.i, '--', c=cell_plot_colors[apic_clamp_params['idx']], lw=2)
+
+
+def exercise_DBS(dbs_params):
+
+    
+    x0, y0, z0 = dbs_params['position']
+    sigma = 0.3
+    ext_field = np.vectorize(lambda x,y,z: 1 / (4 * np.pi* sigma * np.sqrt((x0 - x)**2 + (y0 - y)**2 + (z0 - z)**2)))
+
+    cell_parameters = {
+        'morphology': 'A140612.hoc',  # File with cell morphology
+        'v_init': -62,
+        'passive': False,
+        'nsegs_method': None,
+        'timeres_NEURON': 2**-4,  # [ms] Should be a power of 2
+        'timeres_python': 2**-4,
+        'tstartms': -50,  # [ms] Simulation start time
+        'tstopms': 50,  # [ms] Simulation end time
+        'custom_code': ['cell_model.hoc'] # Loads model specific code
+    }
+
+    ### MAKING THE CELL
+    cell = LFPy.Cell(**cell_parameters)
+
+    ### MAKING THE EXTERNAL FIELD
+    n_tsteps = int(cell.tstopms / cell.timeres_NEURON + 1)
+    t = np.arange(n_tsteps) * cell.timeres_NEURON
+    amp = dbs_params['amp'] * 1000.
+    pulse = np.zeros(n_tsteps)
+    start_time = dbs_params['start_time']
+    end_time = dbs_params['end_time']
+    start_idx = np.argmin(np.abs(t - start_time))
+    end_idx = np.argmin(np.abs(t - end_time))
+    pulse[start_idx:end_idx] = amp
+
+    v_cell_ext = np.zeros((cell.totnsegs, n_tsteps))
+    v_cell_ext[:, :] = ext_field(cell.xmid, cell.ymid, cell.zmid).reshape(cell.totnsegs, 1) * pulse.reshape(1, n_tsteps)
+    cell.insert_v_ext(v_cell_ext, t)
+    cell.simulate(rec_vmem=True)
+
+    ### PLOTTING THE RESULTS
+    cell_plot_idxs = [0,  cell.get_closest_idx(x=-150., y=750., z=0.)]    
+    cell_plot_colors = {cell_plot_idxs[idx]: plt.cm.Greens_r(1./(len(cell_plot_idxs) + 1) * idx + 0.1) for idx in range(len(cell_plot_idxs))}
+
+    #print cell.xmid[cell_plot_idxs[1]], cell.ymid[cell_plot_idxs[1]], cell.zmid[cell_plot_idxs[1    ]]
+
+    # Plotting the morphology
+    plt.figure(figsize=(16,9))
+
+    v_field_ext = np.zeros((50, 200))
+    xf = np.linspace(np.min(cell.xend), np.max(cell.xend), 50)
+    yf = np.linspace(np.min(cell.yend), np.max(cell.yend), 200)
+    for xidx, x in enumerate(xf):
+        for yidx, y in enumerate(yf):
+            v_field_ext[xidx, yidx] = ext_field(x, y, 0) * amp
+    plt.subplots_adjust(hspace=0.5)
+    plt.subplot(121, aspect='equal', xlabel='x [$\mu m$]', ylabel='y [$\mu m$]', xlim=[-400, 400], xticks=[-400, 0, 400], title='Green dots: Measurement points')
+    plt.imshow(v_field_ext.T, extent=[np.min(cell.xend), np.max(cell.xend), np.min(cell.yend), np.max(cell.yend)], origin='lower', interpolation='nearest', cmap=plt.cm.bwr_r, vmin=-150, vmax=150)
+    
+    plt.colorbar(label='mV')
+    [plt.plot([cell.xstart[idx], cell.xend[idx]], [cell.ystart[idx], cell.yend[idx]], c='gray', zorder=1) for idx in xrange(cell.totnsegs)]
+    [plt.plot(cell.xmid[idx], cell.ymid[idx], 'o', c=cell_plot_colors[idx], ms=12) for idx in cell_plot_idxs]
+    plt.plot(x0, y0, 'y*', ms=12)
+
+
+    # Plotting the membrane potentials
+    plt.subplot(222, title='Membrane potential', xlabel='Time [ms]', ylabel='mV', ylim=[-80, 20])
+    [plt.plot(cell.tvec, cell.vmem[idx, :], c=cell_plot_colors[idx], lw=2) for idx in cell_plot_idxs]
+
+    # Plotting the input currents
+    ax1 = plt.subplot(224, ylim=[-2*np.max(np.abs(pulse / 1000)), 2*np.max(np.abs(pulse / 1000))], ylabel='$\mu$A', title='Injected current')
+    ax1.plot(cell.tvec, pulse / 1000)
+    
+    #plt.show()
+
 
 def exercise2(soma_clamp_params, apic_clamp_params, electrode_parameters, noise_level):
     ### MAKING THE CELL
@@ -333,4 +408,11 @@ def exercise4(electrode_parameters, input_y_pos):
     plt.subplot(248, title='Extracellular\npotentials', xlabel='Frequency [Hz]', ylabel='Normalized/Hz', xlim=[1, max_freq], ylim=[1e-3, 1e1])
     [plt.loglog(freqs, LFP_amp[idx] / np.max(LFP_amp[idx, 1:]), c=elec_idx_colors[idx], lw=2) for idx in xrange(len(electrode_parameters['x']))]
 
+if __name__ == '__main__':
+    dbs_params = {'position': [-150., 0., 750.],
+                  'amp': -10., # uA,
+                  'start_time': 10.,
+                  'end_time': 15.,
+                  }
+    exercise_DBS(dbs_params)
 
