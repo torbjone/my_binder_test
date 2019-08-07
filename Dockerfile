@@ -1,51 +1,54 @@
-FROM gcr.io/generic-notebooks/binder-base
-# Copyright (c) 2016, EPFL/Blue Brain Project
 #
-# This file is part of BluePyOpt <https://github.com/BlueBrain/BluePyOpt>
+# NEURON Dockerfile
 #
-# This library is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License version 3.0 as published
-# by the Free Software Foundation.
-#
-# This library is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with this library; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-MAINTAINER Werner Van Geit
+# Pull base image.
+FROM andrewosh/binder-base
+
+MAINTAINER Alex Williams <alex.h.willia@gmail.com>
 
 USER root
 
-RUN apt-get update
-RUN apt-get install -y wget libx11-6 python-dev git build-essential libncurses-dev
-RUN wget https://bootstrap.pypa.io/get-pip.py
-RUN python get-pip.py
-RUN wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/nrn-7.4.x86_64.deb
-RUN dpkg -i nrn-7.4.x86_64.deb
-RUN rm nrn-7.4.x86_64.deb
+RUN \
+  apt-get update && \
+  apt-get install -y libncurses-dev
 
-#RUN pip install git+git://github.com/BlueBrain/deap
-#RUN pip install bluepyopt
+# Make ~/neuron directory to hold stuff.
+WORKDIR neuron
+
+# Fetch NEURON source files, extract them, delete .tar.gz file.
+RUN \
+  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.5/nrn-7.5.tar.gz && \
+  tar -xzf nrn-7.5.tar.gz && \
+  rm nrn-7.5.tar.gz
+
+# Fetch Interviews.
+# RUN \
+#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.5/iv-19.tar.gz  && \
+#  tar -xzf iv-19.tar.gz && \
+#  rm iv-19.tar.gz
+
+WORKDIR nrn-7.5
+
+# Compile NEURON.
+RUN \
+  ./configure --prefix=`pwd` --without-iv --with-nrnpython=$HOME/anaconda/bin/python && \
+  make && \
+  make install
+
+# Install python interface
+WORKDIR src/nrnpython
+RUN python setup.py install
+
+
+
+# Install other requirements
 RUN pip install LFPy
 
-ENV PYTHONPATH /usr/local/nrn/lib/python:$PYTHONPATH
+# Add NEURON to path
+# TODO: detect "x86_64" somehow?
+ENV PATH $HOME/neuron/nrn-7.5/x86_64/bin:$PATH
 
+# Switch back to non-root user privledges
+WORKDIR $HOME
 USER main
-
-ADD . $HOME/notebooks
-
-USER root
-RUN chown -R main:main $HOME/notebooks
-USER main
-
-# Convert notebooks to the current format
-# RUN find $HOME/notebooks -name '*.ipynb' -exec ipython nbconvert --to notebook {} --output {} \;
-RUN find $HOME/notebooks -name '*.ipynb' -exec ipython trust {} \;
-
-WORKDIR $HOME/notebooks
-
-
