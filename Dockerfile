@@ -18,17 +18,17 @@ WORKDIR neuron
 
 # Fetch NEURON source files, extract them, delete .tar.gz file.
 RUN \
-  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.5/nrn-7.5.tar.gz && \
-  tar -xzf nrn-7.5.tar.gz && \
-  rm nrn-7.5.tar.gz
+  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.6/nrn-7.6.tar.gz && \
+  tar -xzf nrn-7.6.tar.gz && \
+  rm nrn-7.6.tar.gz
 
 # Fetch Interviews.
 # RUN \
-#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.5/iv-19.tar.gz  && \
+#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.6/iv-19.tar.gz  && \
 #  tar -xzf iv-19.tar.gz && \
 #  rm iv-19.tar.gz
 
-WORKDIR nrn-7.5
+WORKDIR nrn-7.6
 
 # Compile NEURON.
 RUN \
