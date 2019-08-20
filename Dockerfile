@@ -7,7 +7,7 @@ FROM continuumio/anaconda3
 
 USER root
 RUN apt-get update
-RUN apt-get install -y wget libx11-6 python-dev git build-essential libncurses-dev
+#RUN apt-get install -y wget libx11-6 build-essential libncurses-dev
 RUN wget https://bootstrap.pypa.io/get-pip.py
 RUN python get-pip.py
 
