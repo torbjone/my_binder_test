@@ -18,17 +18,17 @@ WORKDIR neuron
 
 # Fetch NEURON source files, extract them, delete .tar.gz file.
 RUN \
-  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.6/nrn-7.6.tar.gz && \
-  tar -xzf nrn-7.6.tar.gz && \
-  rm nrn-7.6.tar.gz
+  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/nrn-7.4.tar.gz && \
+  tar -xzf nrn-7.4.tar.gz && \
+  rm nrn-7.4.tar.gz
 
 # Fetch Interviews.
 # RUN \
-#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.6/iv-19.tar.gz  && \
+#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/iv-19.tar.gz  && \
 #  tar -xzf iv-19.tar.gz && \
 #  rm iv-19.tar.gz
 
-WORKDIR nrn-7.6
+WORKDIR nrn-7.4
 
 # Compile NEURON.
 RUN \
@@ -40,16 +40,25 @@ RUN \
 WORKDIR src/nrnpython
 RUN python setup.py install
 
+# Install PyNeuron-Toolbox
+#WORKDIR $HOME
+#RUN git clone https://github.com/ahwillia/PyNeuron-Toolbox
+#WORKDIR PyNeuron-Toolbox
+#RUN python setup.py install
 
+# Install JSAnimation
+#WORKDIR $HOME
+#RUN git clone https://github.com/jakevdp/JSAnimation.git
+#RUN python JSAnimation/setup.py install
 
+# Install other requirements
+RUN pip install palettable
 
+#ENV PYTHONPATH $PYTHONPATH:$HOME/JSAnimation/:$HOME/PyNeuron-Toolbox/
 
 # Add NEURON to path
 # TODO: detect "x86_64" somehow?
-ENV PATH $HOME/neuron/nrn-7.5/x86_64/bin:$PATH
-
-# Install other requirements
-#RUN pip install LFPy
+ENV PATH $HOME/neuron/nrn-7.4/x86_64/bin:$PATH
 
 # Switch back to non-root user privledges
 WORKDIR $HOME
