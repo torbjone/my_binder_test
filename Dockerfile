@@ -31,23 +31,25 @@ RUN \
 WORKDIR nrn-7.6
 
 # Compile NEURON.
-#RUN \
-#  ./configure --prefix=`pwd` --without-iv --with-nrnpython=$HOME/anaconda/bin/python && \
-#  make && \
-#  make install
+RUN \
+  ./configure --prefix=`pwd` --without-iv --with-nrnpython=$HOME/anaconda/bin/python && \
+  make && \
+  make install
 
 # Install python interface
-#WORKDIR src/nrnpython
-#RUN python setup.py install
+WORKDIR src/nrnpython
+RUN python setup.py install
 
 
 
-# Install other requirements
-RUN pip install LFPy
+
 
 # Add NEURON to path
 # TODO: detect "x86_64" somehow?
 ENV PATH $HOME/neuron/nrn-7.5/x86_64/bin:$PATH
+
+# Install other requirements
+#RUN pip install LFPy
 
 # Switch back to non-root user privledges
 WORKDIR $HOME
