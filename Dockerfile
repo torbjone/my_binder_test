@@ -16,6 +16,6 @@ RUN dpkg -i nrn-7.7.x86_64-linux.deb
 RUN pip install LFPy==1.1.3
 
 # Switch back to non-root user privledges
-WORKDIR $HOME
+WORKDIR work
 USER main
 
