@@ -6,6 +6,10 @@
 FROM continuumio/anaconda3
 
 USER root
+RUN apt-get update
+RUN apt-get install -y wget libx11-6 python-dev git build-essential libncurses-dev
+RUN wget https://bootstrap.pypa.io/get-pip.py
+RUN python get-pip.py
 
 RUN wget https://neuron.yale.edu/ftp/neuron/versions/v7.7/nrn-7.7.x86_64-linux.deb
 RUN dpkg -i nrn-7.7.x86_64-linux.deb
