@@ -1,4 +1,5 @@
-
+https://mybinder.org/v2/gh/torbjone/my_binder_test.git/master
+ 
 For this to work, you will need to have the following software installed:
 
 Python -- including IPython notebook, NumPy, SciPy, Matplotlib
